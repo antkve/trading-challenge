@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas
 
+
 class Agent:
 
     def __init__(self, env):
@@ -28,7 +29,11 @@ class Agent:
                 lookahead_events_calendar, tradable_assets,
                 asset_attributes, exposures, 
                 portfolio_attributes, var_limit) = observation
-        self.__update_history({'Level':asset_attributes['Level']})
+
+        self.__update_history(
+                {
+            'Level':asset_attributes['Level']
+            })
         return done
 
     def close(self):
@@ -36,21 +41,49 @@ class Agent:
         return pandas.DataFrame(self.assets_history)
 
 
+def cusum_filter(srs, h):
+    df = pandas.DataFrame(srs)
+    df['ema'] = srs.ewm(span=10)
+    S_pos = S_neg = 0
+    filter_points = []
+    last_ema = df['ema'][0]
+    for ix, row in df.iterrows():
+        S_pos = max(S_pos + row[srs.name] - last_ema, 0)
+        S_neg = min(S_pos + row[srs.name] - last_ema, 0)
+        if max(abs(S_neg), abs(S_pos)) > h:
+            pt = {'cusum_sample':row[price], 'ix':ix)
+        else:
+            pt = {'cusum_sample':None, 'ix':ix}
+        filter_points.append(pt)
+        last_ema = row['ema']
+    df['cusum_sample'] = Series(filter_points)
+    return df
+
+
+def plot_df(df, x_col=None, assets=[0, 1], colours=None):
+    x_col = x_col or df.index.name
+    colours = colours or [['b' 
+            for asset in assets] 
+        for colname in df.columns]
+    for colname, colourset in zip(df.columns, colours):
+        if colname != x_col:
+            col = df[colname].apply(pd.Series)
+            for asset, colour in zip(assets, colourset):
+                plt.plot(df[x_col], col[asset], colour)
+    plt.legend()
+    plt.show()
+
+
 def visualize(agent):
     done = False
     while not done:
         done = agent.act()
-    plot1_y = [pt[0] for pt in agent.assets_history['Level']]
-    plot2_y = [pt[1] for pt in agent.assets_history['Level']]
-    plot_x = range(len(agent.assets_history['Level']))
-    plt.plot(plot_x, plot1_y, 'r')
-    plt.plot(plot_x, plot2_y, 'b')
-    plt.show()
-
+    df = agent.assets_history
+    df['cusum_sample'] = cusum_filter(df['Level'])
+    plot_df(df, df.index.name colours=[)
            
 
 env = gym.make('seasonals-v1')
-visualize(Agent(env))
 visualize(Agent(env))
 
 
@@ -80,7 +113,3 @@ class RandomAgent(Agent):
                     'exposures':exposures, 
                     **portfolio_attributes})
         return action, done
-
-
-
-    
