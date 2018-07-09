@@ -7,37 +7,51 @@ import pandas
 
 class Agent:
 
-    def __init__(self, *attributes):
-        self.assets_history = {key:[] for key in attributes}
+    def __init__(self, env):
+        self.env = env
+        (index, day, can_trade, tradable_events, 
+                lookahead_events_calendar, tradable_assets,
+                asset_attributes, exposures, 
+                portfolio_attributes, var_limit) = env.reset()
+        self.assets_history = {'Level':[]}
+        n_assets = len(asset_attributes['Return'])
         self.null_action = np.zeros(n_assets)
 
     def __update_history(self, attributes):
         for key, attribute in attributes.items():
             self.assets_history[key].append(attribute)
 
-    def act(self, out):
-        observation, reward, done, info = out
+    def act(self):
+        action = self.null_action
+        observation, reward, done, info = env.step(action)
         (index, day, can_trade, tradable_events, 
                 lookahead_events_calendar, tradable_assets,
                 asset_attributes, exposures, 
                 portfolio_attributes, var_limit) = observation
-        self.__update_history(
-                {**asset_attributes, 
-                    'exposures':exposures, 
-                    **portfolio_attributes})
-        return self.null_action
-            
+        self.__update_history({'Level':asset_attributes['Level']})
+        return done
+
     def close(self):
         self.env.close()
         return pandas.DataFrame(self.assets_history)
 
+
+def visualize(agent):
+    done = False
+    while not done:
+        done = agent.act()
+    plot1_y = [pt[0] for pt in agent.assets_history['Level']]
+    plot2_y = [pt[1] for pt in agent.assets_history['Level']]
+    plot_x = range(len(agent.assets_history['Level']))
+    plt.plot(plot_x, plot1_y, 'r')
+    plt.plot(plot_x, plot2_y, 'b')
+    plt.show()
+
+           
+
 env = gym.make('seasonals-v1')
-agent = Agent('Level', 'TradeCost', 'index')
-action = agent.act(env.reset())
-while not done:
-    out = env.step(action)
-    action = agent.act(out)
-agent.close()
+visualize(Agent(env))
+visualize(Agent(env))
 
 
 
@@ -70,7 +84,3 @@ class RandomAgent(Agent):
 
 
     
-def visualize(agent, env, **kwargs):
-    while not done:
-        out = 
-        done = agent.act(out)
