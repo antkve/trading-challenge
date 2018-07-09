@@ -43,21 +43,19 @@ class Agent:
 
 def cusum_filter(srs, h):
     df = pandas.DataFrame(srs)
-    df['ema'] = srs.ewm(span=10)
+    df['ema'] = df.ewm(span=10)
     S_pos = S_neg = 0
     filter_points = []
     last_ema = df['ema'][0]
     for ix, row in df.iterrows():
         S_pos = max(S_pos + row[srs.name] - last_ema, 0)
         S_neg = min(S_pos + row[srs.name] - last_ema, 0)
-        if max(abs(S_neg), abs(S_pos)) > h:
-            pt = {'cusum_sample':row[price], 'ix':ix)
-        else:
-            pt = {'cusum_sample':None, 'ix':ix}
+        pt = row[price] \
+                if max(abs(S_neg), abs(S_pos)) > h \
+                else None
         filter_points.append(pt)
         last_ema = row['ema']
-    df['cusum_sample'] = Series(filter_points)
-    return df
+    return pandas.Series(filter_points)
 
 
 def plot_df(df, x_col=None, assets=[0, 1], colours=None):
@@ -67,7 +65,7 @@ def plot_df(df, x_col=None, assets=[0, 1], colours=None):
         for colname in df.columns]
     for colname, colourset in zip(df.columns, colours):
         if colname != x_col:
-            col = df[colname].apply(pd.Series)
+            col = df[colname].apply(pandas.Series)
             for asset, colour in zip(assets, colourset):
                 plt.plot(df[x_col], col[asset], colour)
     plt.legend()
@@ -78,9 +76,10 @@ def visualize(agent):
     done = False
     while not done:
         done = agent.act()
-    df = agent.assets_history
-    df['cusum_sample'] = cusum_filter(df['Level'])
-    plot_df(df, df.index.name colours=[)
+    df = agent.close()
+    print(df)
+    df['cusum_sample'] = cusum_filter(df.Level, 0.0001)
+    plot_df(df, colours=[['r', 'b'], ['gt', 'yt']])
            
 
 env = gym.make('seasonals-v1')
