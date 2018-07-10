@@ -61,6 +61,7 @@ def ema(ls, T):
 
 def cusum_filter(df, h, asset_attribute='Level'):
     df['ema'] = df[asset_attribute].ewm(span=10).mean()
+    df['ema_diff'] = df[asset_attribute] - df['ema']
     S_pos = S_neg = 0
     filter_points = []
     last_ema = df['ema'][0]
@@ -75,6 +76,8 @@ def cusum_filter(df, h, asset_attribute='Level'):
         filter_points.append(pt)
         last_ema = row['ema']
     return pandas.Series(filter_points)
+
+
 
 
 def plot_df(df, x_col=None, assets=[0, 1], colours=None):
@@ -95,7 +98,7 @@ def visualize_cusum(agent):
         done = agent.act()
     dfs = agent.close()[4:]
     for ix in range(len(dfs)):
-        dfs[ix]['cusum_sample'] = cusum_filter(dfs[ix], 7.5)
+        dfs[ix]['sample_points'] = cusum_filter(dfs[ix], 7.5)
         plot_df(dfs[ix], colours=[
             'b', 'ro', 'yo', 'co', 'go', 'y--', 'k^'])
            
