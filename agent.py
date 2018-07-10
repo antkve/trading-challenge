@@ -64,17 +64,17 @@ def cusum_filter(df, h, asset_attribute='Level'):
     df['ema_diff'] = df[asset_attribute] - df['ema']
     S_pos = S_neg = 0
     filter_points = []
-    last_ema = df['ema'][0]
+    last_ema = df['ema_diff'][0]
     for ix, row in df.iterrows():
-        S_pos = max(S_pos + row[asset_attribute] - last_ema, 0)
-        S_neg = min(S_neg + row[asset_attribute] - last_ema, 0)
+        S_pos = max(S_pos + row['ema_diff'] - last_ema, 0)
+        S_neg = min(S_neg + row['ema_diff'] - last_ema, 0)
         if max(abs(S_neg), abs(S_pos)) > h:
             pt = row[asset_attribute]
             S_pos = S_neg = 0
         else: 
             pt = None
         filter_points.append(pt)
-        last_ema = row['ema']
+        last_ema = row['ema_diff']
     return pandas.Series(filter_points)
 
 
