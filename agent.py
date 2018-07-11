@@ -52,13 +52,6 @@ class Agent:
         return [pandas.DataFrame(asset_history) 
                 for asset_history in self.asset_histories]
 
-def ema(ls, T):
-    a = 2/(1 + T)
-    emas = []
-    last_ema = ls[0]
-    for pt in ls:
-        ema = ema + a * (pt - ema)
-
 def cusum_filter(df, h, asset_attribute='Level'):
     df['ema'] = df[asset_attribute].ewm(span=10).mean()
     S_pos = S_neg = 0
