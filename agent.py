@@ -24,6 +24,33 @@ class Agent:
                 for asset_history, timestep 
                 in zip(self.asset_histories, assets_attributes)]
 
+
+    def __label_asset_history(asset_history, ix, v_barrier=5, h_barrier=5,
+            top_barrier_mult=1, bottom_barrier_mult=1, ch_threshold=1):
+        start_price = asset_history[ix]['Level']
+        for timestep in asset_history[ix:ix+v_barrier]:
+            r = timestep['Level'] - start_price
+            if r > h_barrier * top_barrier_mult:
+                return 1
+            elif r < -h_barrier * bottom_barrier_mult:
+                return -1
+        if r > ch_threshold:
+            return 1
+        elif r < -ch_threshold:
+            return -1
+        else:
+            return 0
+
+
+    def __label_history(self, ix, v_barrier=5, h_barrier = 5,
+            top_barrier_mult=1, bottom_barrier_mult=1, ch_threshold=1):
+        labels = [__label_asset_history(asset_history) for asset_history in self.asset_histories]
+            
+                
+
+
+
+
     def act(self):
         action = self.null_action
         observation, reward, done, info = self.env.step(action)
@@ -32,6 +59,7 @@ class Agent:
                 asset_attributes, exposures, 
                 portfolio_attributes, var_limit) = observation
         next_tradable_events = lookahead_events_calendar[1][1]
+        print("Step: {} \nReward: {}".format(index, reward))
         self.__update_histories(
             [
                 dict({'Level':asset_attributes['Level'][a]

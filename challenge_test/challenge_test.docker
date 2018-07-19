@@ -1,0 +1,3 @@
+FROM remote-env
+ADD challenge_test.py .
+CMD ["python", "challenge_test.py"]
